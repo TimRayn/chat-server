@@ -1,6 +1,7 @@
 ﻿using Chat.Business.Interfaces;
 using Chat.Contracts;
 using Chat.Contracts.SocketMessages;
+using Chat.Data;
 using Chat.Data.Repositories.Interfaces;
 using Chat.Hubs;
 using Chat.Mappers;
@@ -32,7 +33,7 @@ namespace Chat.Business
             var user = await _repository.GetByNickName(dto.Nickname, cancel);
             if (user == null)
             {
-                var publicRoom = await _roomRepository.Get(new Guid("B7C83C21-09F2-46C2-9CB1-461AEA2565D4"), cancel);
+                var publicRoom = await _roomRepository.Get(StaticData.PublicRoomId, cancel);
                 user = await _repository.Create(dto.ToEntity(new List<Room> { publicRoom }), cancel);
 
                 await _hubContext.Clients.Group(publicRoom.RoomId.ToString()).SendAsync("UserJoined", new UserJoinedDTO

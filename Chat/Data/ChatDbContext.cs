@@ -1,5 +1,7 @@
-﻿using Chat.Repository.Models;
+﻿using Chat.Data;
+using Chat.Repository.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace Chat.Repository
 {
@@ -18,9 +20,14 @@ namespace Chat.Repository
         {
             modelBuilder.Entity<Room>().HasData(new Room
             {
-                RoomId = new System.Guid("B7C83C21-09F2-46C2-9CB1-461AEA2565D4"),
+                RoomId = StaticData.PublicRoomId,
                 Name = "Public"
             }); // Initialize "Public" room
+            modelBuilder.Entity<User>().HasData(new User 
+            { 
+                NickName = "Test", 
+                Id = StaticData.TestUserId 
+            });
         }
     }
 }

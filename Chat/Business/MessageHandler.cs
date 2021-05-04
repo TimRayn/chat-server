@@ -47,7 +47,7 @@ namespace Chat.Business
         public async Task Update(UpdateMessageDTO dto, CancellationToken cancel)
         {
             var newMessage = await _repository.Update(dto.ToEntity(), cancel);
-            await _hubContext.Clients.Group(dto.RoomId.ToString())
+            await _hubContext.Clients.Group(newMessage.RoomId.ToString())
                 .SendAsync("MessageUpdated", newMessage);
         }
 
