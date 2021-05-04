@@ -55,10 +55,7 @@ namespace Chat.Business
             var newMessage = await _repository.Update(new Message
             {
                 Id = dto.Id,
-                Content = dto.Content,
-                Date = dto.Date,
-                RoomId = dto.RoomId,
-                UserId = dto.UserId
+                Content = dto.Content
             });
             await _hubContext.Clients.Group(dto.RoomId.ToString()).SendAsync("MessageUpdated", newMessage);
             return newMessage;
