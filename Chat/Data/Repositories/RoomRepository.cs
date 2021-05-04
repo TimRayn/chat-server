@@ -3,6 +3,7 @@ using Chat.Repository;
 using Chat.Repository.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Chat.Data.Repositories
@@ -16,17 +17,17 @@ namespace Chat.Data.Repositories
             _context = context;
         }
 
-        public async Task<Room> Create(Room model)
+        public async Task<Room> Create(Room model, CancellationToken cancel)
         {
             _context.AttachRange(model.Users);
             await _context.Rooms.AddAsync(model);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancel);
             return model;
         }
 
-        public Task<Room> Get(Guid id)
+        public Task<Room> Get(Guid id, CancellationToken cancel)
         {
-            return _context.Rooms.Include(x => x.Users).SingleAsync(x => x.RoomId == id);
+            return _context.Rooms.Include(x => x.Users).SingleAsync(x => x.RoomId == id, cancel);
         }
     }
 }

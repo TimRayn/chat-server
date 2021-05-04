@@ -3,10 +3,13 @@ using Chat.Contracts;
 using Chat.Contracts.SocketMessages;
 using Chat.Data.Repositories.Interfaces;
 using Chat.Hubs;
+using Chat.Mappers;
 using Chat.Repository.Models;
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Chat.Business
@@ -24,27 +27,24 @@ namespace Chat.Business
             _hubContext = hubContext;
         }
 
-        public async Task<User> Login(LoginDTO dto)
+        public async Task<UserDTO> Login(LoginDTO dto, CancellationToken cancel)
         {
-            var user = await _repository.GetByNickName(dto.Nickname);
+            var user = await _repository.GetByNickName(dto.Nickname, cancel);
             if (user == null)
             {
-                var publicRoom = await _roomRepository.Get(new Guid("B7C83C21-09F2-46C2-9CB1-461AEA2565D4"));
-                user = await _repository.Create(new User
-                {
-                    NickName = dto.Nickname,
-                    Id = Guid.NewGuid(),
-                    Rooms = new List<Room> { publicRoom } 
-                });
+                var publicRoom = await _roomRepository.Get(new Guid("B7C83C21-09F2-46C2-9CB1-461AEA2565D4"), cancel);
+                user = await _repository.Create(dto.ToEntity(new List<Room> { publicRoom }), cancel);
 
                 await _hubContext.Clients.Group(publicRoom.RoomId.ToString()).SendAsync("UserJoined", new UserJoinedDTO
                 {
-                    User = new User { Id = user.Id, NickName = user.NickName },
+                    User = new UserDTO { Id = user.Id, NickName = user.NickName },
                     RoomId = publicRoom.RoomId
                 });
             }
 
-            return user;
+            return user.ToDTO(user.Rooms
+                .Select(x => x.ToDTO(x.Users
+                .Select(u => u.ToDTO(new List<RoomDTO>())).ToList())).ToList());
         }
     }
 }

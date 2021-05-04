@@ -18,7 +18,7 @@ namespace Chat.Controllers
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
-            var user = await _handler.Login(dto);
+            var user = await _handler.Login(dto, HttpContext.RequestAborted);
             return Ok(user);
         }
     }

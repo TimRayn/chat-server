@@ -2,10 +2,12 @@
 using Chat.Contracts;
 using Chat.Data.Repositories.Interfaces;
 using Chat.Hubs;
-using Chat.Repository.Models;
+using Chat.Mappers;
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Chat.Business
@@ -21,49 +23,38 @@ namespace Chat.Business
             _hubContext = hubContext;
         }
 
-        public async Task<Message> Create(CreateMessageDTO dto)
+        public async Task<MessageDTO> Create(CreateMessageDTO dto, CancellationToken cancel)
         {
-            var message = await _repository.Create(new Message
-            {
-                Id = Guid.NewGuid(),
-                Content = dto.Content,
-                Date = DateTime.Now,
-                RoomId = dto.RoomId,
-                UserId = dto.UserId,
-                RepliedMessageContent = dto.RepliedMessageContent
-            });
-
+            var message = await _repository.Create(dto.ToEntity(), cancel);
             await _hubContext.Clients.Group(dto.RoomId.ToString()).SendAsync("MessageSent", message);
-
-            return message;
+            return message.ToDTO();
         }
 
-        public Task<List<Message>> GetAllByRoom(Guid roomId)
+        public async Task<List<MessageDTO>> GetAllByRoom(Guid roomId, CancellationToken cancel)
         {
-            return _repository.GetAllByRoom(roomId);
+            var messages = await _repository.GetAllByRoom(roomId, cancel);
+            return messages.Select(x => x.ToDTO()).ToList();
         }
 
-        public async Task<List<Message>> Delete(Guid[] messages, bool forOwner)
+        public async Task Delete(Guid[] messages, bool forOwner, CancellationToken cancel)
         {
-            var deletedMessages = await _repository.Delete(messages, forOwner);
-            await _hubContext.Clients.Group(deletedMessages[0].RoomId.ToString()).SendAsync("MessagesDeleted", deletedMessages);
-            return deletedMessages;
+            var deletedMessages = await _repository.Delete(messages, forOwner, cancel);
+            await _hubContext.Clients
+                .Group(deletedMessages[0].RoomId.ToString())
+                .SendAsync("MessagesDeleted", deletedMessages);
         }
 
-        public async Task<Message> Update(UpdateMessageDTO dto)
+        public async Task Update(UpdateMessageDTO dto, CancellationToken cancel)
         {
-            var newMessage = await _repository.Update(new Message
-            {
-                Id = dto.Id,
-                Content = dto.Content
-            });
-            await _hubContext.Clients.Group(dto.RoomId.ToString()).SendAsync("MessageUpdated", newMessage);
-            return newMessage;
+            var newMessage = await _repository.Update(dto.ToEntity(), cancel);
+            await _hubContext.Clients.Group(dto.RoomId.ToString())
+                .SendAsync("MessageUpdated", newMessage);
         }
 
-        public Task<List<Message>> Get(Guid roomId, DateTime from, int count)
+        public async Task<List<MessageDTO>> Get(Guid roomId, DateTime from, int count, CancellationToken cancel)
         {
-            return _repository.Get(roomId, from, count);
+            var messages = await _repository.Get(roomId, from, count, cancel);
+            return messages.Select(x => x.ToDTO()).ToList();
         }
     }
 }

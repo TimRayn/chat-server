@@ -1,11 +1,11 @@
 ﻿using Chat.Contracts;
-using Chat.Repository.Models;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Chat.Business.Interfaces
 {
     public interface IUserHandler
     {
-        Task<User> Login(LoginDTO dto);
+        Task<UserDTO> Login(LoginDTO dto, CancellationToken cancel);
     }
 }

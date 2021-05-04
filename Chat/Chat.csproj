@@ -15,5 +15,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Chat.Contracts\Chat.Contracts.csproj" />
+  </ItemGroup>
+
 
 </Project>

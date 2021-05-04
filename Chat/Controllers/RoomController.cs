@@ -18,7 +18,7 @@ namespace Chat.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateRoomDTO dto)
         {
-            var message = await _handler.Create(dto);
+            var message = await _handler.Create(dto, HttpContext.RequestAborted);
             return Ok(message);
         }
     }

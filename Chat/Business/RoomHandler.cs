@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Chat.Business
@@ -25,13 +26,13 @@ namespace Chat.Business
             _hubContext = hubContext;
         }
 
-        public async Task<Room> Create(CreateRoomDTO dto)
+        public async Task<RoomDTO> Create(CreateRoomDTO dto, CancellationToken cancel)
         {
             var users = new List<User>();
 
             foreach (var userId in dto.UserIds)
             {
-                var user = await _userRepository.Get(userId);
+                var user = await _userRepository.Get(userId, cancel);
                 if (user == null)
                     throw new Exception("User not found!");
                 users.Add(user);
@@ -43,14 +44,15 @@ namespace Chat.Business
                 Users = users.ToList()
             };
 
-            await _repository.Create(model);
+            await _repository.Create(model, cancel);
 
             foreach (var userId in dto.UserIds)
             {
-                await _hubContext.Clients.Group(userId.ToString()).SendAsync("RoomCreated", model.ToDTO());
+                await _hubContext.Clients.Group(userId.ToString()).
+                    SendAsync("RoomCreated", model.ToDTO(model.Users.Select(x => x.ToDTO(null)).ToList()));
             }
 
-            return model;
+            return model.ToDTO(model.Users.Select(x => x.ToDTO(new List<RoomDTO>())).ToList());
         }
     }
 }
